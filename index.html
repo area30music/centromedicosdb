@@ -73,7 +73,7 @@
         video {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Mantiene proporzioni, le parti vuote prendono il background */
+            object-fit: contain; /* Mantiene proporzioni, le parti vuote prendono il background bianco */
             background-color: #ffffff;
         }
 
@@ -86,14 +86,14 @@
             left: 0;
         }
         
-        /* Meteo ancorato in alto e zoomato */
+        /* Meteo centrato e ingrandito in modo sicuro */
         #step-meteo {
             background-color: #ffffff;
             overflow: hidden;
         }
         #step-meteo iframe {
-            transform: scale(1.5);
-            transform-origin: top center; /* Lo tiene agganciato in alto */
+            transform: scale(1.35); /* Leggermente ridotto per non sbordare */
+            transform-origin: center center; /* Espande dal centro per non tagliare il fondo */
         }
 
         /* Barra di progressione in basso */
