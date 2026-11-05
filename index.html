@@ -37,9 +37,37 @@
             top: 0;
             left: 0;
         }
+        /* Zoom specifico per il meteo */
+        #step-meteo iframe {
+            transform: scale(1.3);
+            transform-origin: center center;
+        }
+
+        /* Barra di progressione */
+        #progress-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #00aaff;
+            transition: width linear;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Barra di caricamento -->
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+    </div>
 
     <!-- 1. SEZIONE VIDEO -->
     <div id="step-video" class="container active">
@@ -64,11 +92,14 @@
         const meteoStep = document.getElementById('step-meteo');
         const newsStep = document.getElementById('step-news');
         const localVideo = document.getElementById('localVideo');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar');
 
         const meteoDuration = 120000; 
         const newsDuration = 255000;  
 
         function startSequence() {
+            progressBarContainer.style.display = 'none';
             videoStep.classList.add('active');
             meteoStep.classList.remove('active');
             newsStep.classList.remove('active');
@@ -87,14 +118,37 @@
         function showMeteo() {
             videoStep.classList.remove('active');
             meteoStep.classList.add('active');
+            
+            startProgress(meteoDuration);
             setTimeout(showNews, meteoDuration);
         }
 
         function showNews() {
             meteoStep.classList.remove('active');
             newsStep.classList.add('active');
+            
+            startProgress(newsDuration);
             setTimeout(startSequence, newsDuration);
         }
+
+        function startProgress(duration) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+            progressBarContainer.style.display = 'block';
+            
+            offsetHeight;
+            
+            progressBar.style.transition = `width ${duration}ms linear`;
+            progressBar.style.width = '100%';
+        }
+
+        // Controllo giornaliero per il riavvio alle 08:55
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 8 && now.getMinutes() === 55) {
+                location.reload();
+            }
+        }, 60000);
 
         window.onload = function() {
             startSequence();
