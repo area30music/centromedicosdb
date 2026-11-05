@@ -24,11 +24,18 @@
         .active {
             display: block;
         }
-        video, iframe {
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        iframe {
             width: 100%;
             height: 100%;
             border: none;
-            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
@@ -37,8 +44,7 @@
     <!-- 1. SEZIONE VIDEO -->
     <div id="step-video" class="container active">
         <video id="localVideo" autoplay muted>
-            <!-- Inserisci qui sotto il nome esatto del tuo file video -->
-            <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
+            <source src="tuo-video.mp4" type="video/mp4">
             Il tuo browser non supporta il formato video.
         </video>
     </div>
@@ -59,9 +65,8 @@
         const newsStep = document.getElementById('step-news');
         const localVideo = document.getElementById('localVideo');
 
-        // Durate impostate in millisecondi
-        const meteoDuration = 120000; // 120 secondi
-        const newsDuration = 255000;  // 255 secondi
+        const meteoDuration = 120000; 
+        const newsDuration = 255000;  
 
         function startSequence() {
             videoStep.classList.add('active');
@@ -70,7 +75,7 @@
             
             localVideo.currentTime = 0;
             localVideo.play().catch(e => {
-                console.log("Autoplay bloccato, passo al meteo:", e);
+                console.log("Autoplay bloccato:", e);
                 showMeteo();
             });
         }
@@ -95,6 +100,5 @@
             startSequence();
         };
     </script>
-
 </body>
 </html>
