@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area 30 - Display TV</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+        }
+        .container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        video, iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SEZIONE VIDEO -->
+    <div id="step-video" class="container active">
+        <video id="localVideo" autoplay muted>
+            <!-- Inserisci qui sotto il nome esatto del tuo file video -->
+            <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
+            Il tuo browser non supporta il formato video.
+        </video>
+    </div>
+
+    <!-- 2. SEZIONE METEO -->
+    <div id="step-meteo" class="container">
+        <iframe src="https://area30music.github.io/meteosommariva/"></iframe>
+    </div>
+
+    <!-- 3. SEZIONE NEWS -->
+    <div id="step-news" class="container">
+        <iframe src="https://area30music.github.io/newssommarivabosco/"></iframe>
+    </div>
+
+    <script>
+        const videoStep = document.getElementById('step-video');
+        const meteoStep = document.getElementById('step-meteo');
+        const newsStep = document.getElementById('step-news');
+        const localVideo = document.getElementById('localVideo');
+
+        // Durate impostate in millisecondi
+        const meteoDuration = 120000; // 120 secondi
+        const newsDuration = 255000;  // 255 secondi
+
+        function startSequence() {
+            videoStep.classList.add('active');
+            meteoStep.classList.remove('active');
+            newsStep.classList.remove('active');
+            
+            localVideo.currentTime = 0;
+            localVideo.play().catch(e => {
+                console.log("Autoplay bloccato, passo al meteo:", e);
+                showMeteo();
+            });
+        }
+
+        localVideo.onended = function() {
+            showMeteo();
+        };
+
+        function showMeteo() {
+            videoStep.classList.remove('active');
+            meteoStep.classList.add('active');
+            setTimeout(showNews, meteoDuration);
+        }
+
+        function showNews() {
+            meteoStep.classList.remove('active');
+            newsStep.classList.add('active');
+            setTimeout(startSequence, newsDuration);
+        }
+
+        window.onload = function() {
+            startSequence();
+        };
+    </script>
+
+</body>
+</html>
