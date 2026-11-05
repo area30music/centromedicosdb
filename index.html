@@ -71,7 +71,8 @@
 
     <!-- 1. SEZIONE VIDEO -->
     <div id="step-video" class="container active">
-        <video id="localVideo" autoplay muted>
+        <!-- Assicurati che non ci sia l'attributo 'loop' nel tag video -->
+        <video id="localVideo" autoplay muted playsinline>
             <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
             Il tuo browser non supporta il formato video.
         </video>
@@ -95,8 +96,9 @@
         const progressBarContainer = document.getElementById('progress-bar-container');
         const progressBar = document.getElementById('progress-bar');
 
-        const meteoDuration = 120000; 
-        const newsDuration = 255000;  
+        const meteoDuration = 120000; // 2 minuti in millisecondi
+        const newsDuration = 255000;  // 4 minuti e 15 secondi in millisecondi
+        let videoFallbackTimer = null;
 
         function startSequence() {
             progressBarContainer.style.display = 'none';
@@ -105,25 +107,45 @@
             newsStep.classList.remove('active');
             
             localVideo.currentTime = 0;
-            localVideo.play().catch(e => {
-                console.log("Autoplay bloccato:", e);
-                showMeteo();
-            });
+            
+            const playPromise = localVideo.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log("Autoplay bloccato:", e);
+                    showMeteo();
+                });
+            }
         }
 
-        localVideo.onended = function() {
-            showMeteo();
-        };
+        // Passaggio al meteo quando il video finisce (evento standard)
+        localVideo.addEventListener('ended', showMeteo);
+
+        // Sistema di sicurezza se l'evento 'ended' si blocca sulla TV
+        localVideo.addEventListener('play', () => {
+            clearTimeout(videoFallbackTimer);
+            if(localVideo.duration && localVideo.duration > 0 && localVideo.duration !== Infinity) {
+                videoFallbackTimer = setTimeout(() => {
+                    if (videoStep.classList.contains('active')) {
+                        showMeteo();
+                    }
+                }, (localVideo.duration * 1000) + 1000); // Aggiunge 1 secondo di margine alla durata
+            }
+        });
 
         function showMeteo() {
+            if (meteoStep.classList.contains('active')) return; // Evita di far partire il timer due volte
+            
+            clearTimeout(videoFallbackTimer);
             videoStep.classList.remove('active');
             meteoStep.classList.add('active');
+            newsStep.classList.remove('active');
             
             startProgress(meteoDuration);
             setTimeout(showNews, meteoDuration);
         }
 
         function showNews() {
+            videoStep.classList.remove('active');
             meteoStep.classList.remove('active');
             newsStep.classList.add('active');
             
@@ -136,20 +158,20 @@
             progressBar.style.width = '0%';
             progressBarContainer.style.display = 'block';
             
-            // Forza il ricalcolo per attivare l'animazione CSS
+            // Forza il browser a ricalcolare lo stile prima di avviare l'animazione
             void progressBar.offsetWidth;
             
             progressBar.style.transition = `width ${duration}ms linear`;
-            progressBar.style.width = '100%'];
+            progressBar.style.width = '100%';
         }
 
-        // Controllo giornaliero per il riavvio alle 08:55
+        // Riavvio automatico della pagina tutti i giorni alle 08:55
         setInterval(() => {
             const now = new Date();
             if (now.getHours() === 8 && now.getMinutes() === 55) {
                 location.reload();
             }
-        }, 60000);
+        }, 60000); // Controlla l'orario ogni minuto (60.000 ms)
 
         window.onload = function() {
             startSequence();
