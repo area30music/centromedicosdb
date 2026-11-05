@@ -10,7 +10,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #ffffff; /* Sfondo bianco ovunque */
+            background-color: #ffffff;
             overflow: hidden;
             font-family: Arial, sans-serif;
         }
@@ -38,9 +38,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        #clock-container {
-            text-align: right;
-        }
+        #clock-container { text-align: right; }
         #clock-time {
             font-size: 40px;
             font-weight: bold;
@@ -52,7 +50,7 @@
             margin-top: 4px;
         }
 
-        /* Contenitori principali spostati sotto la barra */
+        /* Contenitori principali sotto la barra */
         .container {
             width: 100%;
             height: calc(100% - 80px);
@@ -60,24 +58,31 @@
             top: 80px;
             left: 0;
             display: none;
-            background-color: #ffffff; /* Sfondo bianco */
-        }
-        .active {
-            display: block;
-        }
-
-        /* Video con fasce bianche */
-        #step-video {
             background-color: #ffffff;
+            overflow: hidden;
         }
-        video {
+        .active { display: block; }
+
+        /* VIDEO: la cornice ha esattamente le proporzioni del video,
+           quindi tutto lo spazio intorno resta BIANCO (anche sulle TV
+           che dipingono di nero l'area vuota del tag <video>) */
+        #video-frame {
+            position: absolute;
+            overflow: hidden;
+            background: transparent;
+        }
+        #localVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Mantiene proporzioni, le parti vuote prendono il background bianco */
-            background-color: #ffffff;
+            object-fit: fill;
+            background: transparent;
         }
 
-        iframe {
+        /* Iframe news */
+        #step-news iframe {
             width: 100%;
             height: 100%;
             border: none;
@@ -85,15 +90,16 @@
             top: 0;
             left: 0;
         }
-        
-        /* Meteo centrato e ingrandito in modo sicuro. */
-        #step-meteo {
-            background-color: #ffffff;
-            overflow: hidden;
-        }
-        #step-meteo iframe {
-            transform: scale(1.35); /* Leggermente ridotto per non sbordare */
-            transform-origin: center center; /* Espande dal centro per non tagliare il fondo */
+
+        /* METEO: dimensioni e zoom calcolati via JavaScript
+           per riempire tutto lo spazio senza tagliare nulla */
+        #meteo-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+            -webkit-transform-origin: 0 0;
+            transform-origin: 0 0;
         }
 
         /* Barra di progressione in basso */
@@ -133,15 +139,16 @@
 
     <!-- 1. SEZIONE VIDEO -->
     <div id="step-video" class="container active">
-        <!-- Rimosso loop per sicurezza -->
-        <video id="localVideo" autoplay muted playsinline>
-            <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
-        </video>
+        <div id="video-frame">
+            <video id="localVideo" autoplay muted playsinline>
+                <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
+            </video>
+        </div>
     </div>
 
     <!-- 2. SEZIONE METEO -->
     <div id="step-meteo" class="container">
-        <iframe src="https://area30music.github.io/meteosommariva/"></iframe>
+        <iframe id="meteo-frame" src="https://area30music.github.io/meteosommariva/"></iframe>
     </div>
 
     <!-- 3. SEZIONE NEWS -->
@@ -150,17 +157,33 @@
     </div>
 
     <script>
-        // Orologio e Data in tempo reale (Versione ultra-compatibile per Smart TV)
+        /* ================= IMPOSTAZIONI ================= */
+
+        // Se le fasce nere sono "dentro" il file video (cioè fanno parte
+        // del filmato stesso), indica qui quanta larghezza tagliare per
+        // ogni lato, in percentuale. Esempio: 12.5 per un video 4:3
+        // esportato in 16:9. Lascia 0 se il video non ha bande incise.
+        var TAGLIO_LATI_PERCENTO = 0;
+
+        // Zoom del meteo: 1 = normale. Aumenta (es. 1.5) per ingrandire
+        // i contenuti, diminuisci se qualcosa esce dallo schermo.
+        // La pagina riempie comunque sempre tutto lo spazio disponibile.
+        var ZOOM_METEO = 1.35;
+
+        var ALTEZZA_BARRA = 80;
+        var meteoDuration = 60000;   // 60 secondi
+        var newsDuration = 255000;   // 4 minuti e 15 secondi
+
+        /* ================================================ */
+
+        function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+        // Orologio e data
         function updateClock() {
             var now = new Date();
-            
-            // Orario
-            var hours = String(now.getHours()).padStart(2, '0');
-            var minutes = String(now.getMinutes()).padStart(2, '0');
-            var seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('clock-time').textContent = hours + ':' + minutes + ':' + seconds;
-            
-            // Data
+            document.getElementById('clock-time').textContent =
+                pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
             var options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
             var dateString = now.toLocaleDateString('it-IT', options);
             if (dateString && dateString.length > 0) {
@@ -171,17 +194,69 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Gestione Sequenza
         var videoStep = document.getElementById('step-video');
         var meteoStep = document.getElementById('step-meteo');
         var newsStep = document.getElementById('step-news');
+        var videoFrame = document.getElementById('video-frame');
         var localVideo = document.getElementById('localVideo');
+        var meteoFrame = document.getElementById('meteo-frame');
         var progressBarContainer = document.getElementById('progress-bar-container');
         var progressBar = document.getElementById('progress-bar');
+        var isVideoPlaying = false;
 
-        var meteoDuration = 60000;   // 60 secondi
-        var newsDuration = 255000;   // 4 minuti e 15 secondi
-        var isVideoPlaying = false;  // Flag di sicurezza
+        // Dimensiona il video alle sue proporzioni reali, centrato su fondo bianco
+        function fitVideo() {
+            var vw = localVideo.videoWidth;
+            var vh = localVideo.videoHeight;
+            var cw = window.innerWidth;
+            var ch = window.innerHeight - ALTEZZA_BARRA;
+            if (!vw || !vh) {
+                // Metadati non ancora pronti: occupa tutto per ora
+                videoFrame.style.left = '0px';
+                videoFrame.style.top = '0px';
+                videoFrame.style.width = cw + 'px';
+                videoFrame.style.height = ch + 'px';
+                localVideo.style.objectFit = 'contain';
+                return;
+            }
+            localVideo.style.objectFit = 'fill';
+
+            // Larghezza "utile" del video escludendo eventuali bande incise
+            var taglio = TAGLIO_LATI_PERCENTO / 100;
+            var vwUtile = vw * (1 - 2 * taglio);
+
+            var s = Math.min(cw / vwUtile, ch / vh);
+            var wPieno = vw * s;               // larghezza video intero
+            var wVisibile = vwUtile * s;       // larghezza dopo il taglio
+            var h = vh * s;
+            var crop = wPieno * taglio;
+
+            videoFrame.style.width = Math.round(wVisibile) + 'px';
+            videoFrame.style.height = Math.round(h) + 'px';
+            videoFrame.style.left = Math.round((cw - wVisibile) / 2) + 'px';
+            videoFrame.style.top = Math.round((ch - h) / 2) + 'px';
+
+            localVideo.style.width = Math.round(wPieno) + 'px';
+            localVideo.style.height = Math.round(h) + 'px';
+            localVideo.style.left = Math.round(-crop) + 'px';
+        }
+
+        // Il meteo viene impaginato su uno schermo "virtuale" più piccolo
+        // e poi ingrandito per riempire esattamente tutto lo spazio
+        function fitMeteo() {
+            var cw = window.innerWidth;
+            var ch = window.innerHeight - ALTEZZA_BARRA;
+            var z = ZOOM_METEO > 0 ? ZOOM_METEO : 1;
+            meteoFrame.style.width = Math.ceil(cw / z) + 'px';
+            meteoFrame.style.height = Math.ceil(ch / z) + 'px';
+            meteoFrame.style.webkitTransform = 'scale(' + z + ')';
+            meteoFrame.style.transform = 'scale(' + z + ')';
+        }
+
+        function fitAll() { fitVideo(); fitMeteo(); }
+        localVideo.addEventListener('loadedmetadata', fitVideo);
+        window.addEventListener('resize', fitAll);
+        fitAll();
 
         function startSequence() {
             progressBarContainer.style.display = 'none';
@@ -189,24 +264,23 @@
             meteoStep.classList.remove('active');
             newsStep.classList.remove('active');
             isVideoPlaying = true;
-            
+            fitVideo();
+
             localVideo.currentTime = 0;
-            
+
             var playPromise = localVideo.play();
             if (playPromise !== undefined) {
-                playPromise.catch(function(e) {
+                playPromise.catch(function (e) {
                     console.log("Autoplay bloccato:", e);
                     showMeteo();
                 });
             }
         }
 
-        // Passaggio standard a fine video
         localVideo.addEventListener('ended', showMeteo);
 
-        // FALLBACK INFALLIBILE PER TV: controlla costantemente a che punto è il video
-        localVideo.addEventListener('timeupdate', function() {
-            // Se mancano meno di 0.5 secondi alla fine del video, forza il passaggio
+        // Fallback per TV: forza il passaggio a fine video
+        localVideo.addEventListener('timeupdate', function () {
             if (isVideoPlaying && localVideo.duration > 0) {
                 if (localVideo.currentTime >= localVideo.duration - 0.5) {
                     showMeteo();
@@ -216,12 +290,13 @@
 
         function showMeteo() {
             if (meteoStep.classList.contains('active')) return;
-            isVideoPlaying = false; // Ferma il controllo timeupdate
-            
+            isVideoPlaying = false;
+
             videoStep.classList.remove('active');
             meteoStep.classList.add('active');
             newsStep.classList.remove('active');
-            
+            fitMeteo();
+
             startProgress(meteoDuration);
             setTimeout(showNews, meteoDuration);
         }
@@ -230,7 +305,7 @@
             videoStep.classList.remove('active');
             meteoStep.classList.remove('active');
             newsStep.classList.add('active');
-            
+
             startProgress(newsDuration);
             setTimeout(startSequence, newsDuration);
         }
@@ -239,22 +314,23 @@
             progressBar.style.transition = 'none';
             progressBar.style.width = '0%';
             progressBarContainer.style.display = 'block';
-            
-            void progressBar.offsetWidth; // Forza l'aggiornamento grafico
-            
+
+            void progressBar.offsetWidth;
+
             progressBar.style.transition = 'width ' + duration + 'ms linear';
             progressBar.style.width = '100%';
         }
 
         // Riavvio quotidiano alle 08:55
-        setInterval(function() {
+        setInterval(function () {
             var now = new Date();
             if (now.getHours() === 8 && now.getMinutes() === 55) {
                 location.reload();
             }
         }, 60000);
 
-        window.onload = function() {
+        window.onload = function () {
+            fitAll();
             startSequence();
         };
     </script>
