@@ -37,28 +37,28 @@
             top: 0;
             left: 0;
         }
-        /* Zoom specifico per il meteo */
+        /* Zoom maggiorato per il meteo */
         #step-meteo iframe {
-            transform: scale(1.3);
+            transform: scale(1.6);
             transform-origin: center center;
         }
 
-        /* Barra di progressione */
+        /* Barra di progressione fissata in basso */
         #progress-bar-container {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
             display: none;
         }
         #progress-bar {
             height: 100%;
             width: 0%;
             background-color: #00aaff;
-            transition: width linear;
+            transition: none;
         }
     </style>
 </head>
@@ -72,7 +72,7 @@
     <!-- 1. SEZIONE VIDEO -->
     <div id="step-video" class="container active">
         <video id="localVideo" autoplay muted>
-            <source src="VIDEO TV CENTRO MEDICO (Video).mp4" type="video/mp4">
+            <source src="tuo-video.mp4" type="video/mp4">
             Il tuo browser non supporta il formato video.
         </video>
     </div>
@@ -136,10 +136,11 @@
             progressBar.style.width = '0%';
             progressBarContainer.style.display = 'block';
             
-            offsetHeight;
+            // Forza il ricalcolo per attivare l'animazione CSS
+            void progressBar.offsetWidth;
             
             progressBar.style.transition = `width ${duration}ms linear`;
-            progressBar.style.width = '100%';
+            progressBar.style.width = '100%'];
         }
 
         // Controllo giornaliero per il riavvio alle 08:55
