@@ -165,12 +165,19 @@
         // esportato in 16:9. Lascia 0 se il video non ha bande incise.
         var TAGLIO_LATI_PERCENTO = 0;
 
-        // Zoom del meteo: 1 = normale. Aumenta (es. 1.5) per ingrandire
-        // i contenuti, diminuisci se qualcosa esce dallo schermo.
-        // La pagina riempie comunque sempre tutto lo spazio disponibile.
-        var ZOOM_METEO = 1.35;
+        // Meteo: lo zoom viene calcolato in automatico per far riempire
+        // al riquadro meteo tutto lo spazio disponibile.
+        // SPAZIO_METEO = quanta parte dello spazio occupare (1 = tutto,
+        // bordo a bordo). 0.97 lascia un piccolo margine ai lati.
+        var SPAZIO_METEO = 0.97;
+
+        // Dimensioni visibili del riquadro nella pagina meteo
+        // (1240 x 700 px rimpiccioliti a 0.55 nel suo CSS)
+        var METEO_LARGHEZZA = 1240 * 0.55;
+        var METEO_ALTEZZA = 700 * 0.55;
 
         var ALTEZZA_BARRA = 80;
+        var ALTEZZA_PROGRESSO = 12;
         var meteoDuration = 60000;   // 60 secondi
         var newsDuration = 255000;   // 4 minuti e 15 secondi
 
@@ -241,12 +248,13 @@
             localVideo.style.left = Math.round(-crop) + 'px';
         }
 
-        // Il meteo viene impaginato su uno schermo "virtuale" più piccolo
-        // e poi ingrandito per riempire esattamente tutto lo spazio
+        // Calcola lo zoom massimo che fa stare il riquadro meteo
+        // nello spazio tra la barra in alto e la barra di avanzamento
         function fitMeteo() {
             var cw = window.innerWidth;
-            var ch = window.innerHeight - ALTEZZA_BARRA;
-            var z = ZOOM_METEO > 0 ? ZOOM_METEO : 1;
+            var ch = window.innerHeight - ALTEZZA_BARRA - ALTEZZA_PROGRESSO;
+            var z = Math.min(cw / METEO_LARGHEZZA, ch / METEO_ALTEZZA) * SPAZIO_METEO;
+            if (!(z > 0)) z = 1;
             meteoFrame.style.width = Math.ceil(cw / z) + 'px';
             meteoFrame.style.height = Math.ceil(ch / z) + 'px';
             meteoFrame.style.webkitTransform = 'scale(' + z + ')';
