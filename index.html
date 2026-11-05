@@ -12,6 +12,7 @@
             height: 100%;
             background-color: #000;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
         .container {
             width: 100%;
@@ -37,9 +38,10 @@
             top: 0;
             left: 0;
         }
-        /* Zoom maggiorato per il meteo */
+        
+        /* Zoom maggiorato per il meteo a 1.7 */
         #step-meteo iframe {
-            transform: scale(1.6);
+            transform: scale(1.7);
             transform-origin: center center;
         }
 
@@ -51,7 +53,7 @@
             width: 100%;
             height: 12px;
             background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
+            z-index: 9998;
             display: none;
         }
         #progress-bar {
@@ -60,9 +62,38 @@
             background-color: #00aaff;
             transition: none;
         }
+
+        /* Orologio e Data in sovrimpressione */
+        #clock-widget {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 32px;
+            font-weight: bold;
+            z-index: 9999; /* Sopra tutto, video compreso */
+            text-align: center;
+            backdrop-filter: blur(8px);
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        #clock-date {
+            font-size: 18px;
+            font-weight: normal;
+            margin-top: 5px;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Orologio e Data -->
+    <div id="clock-widget">
+        <div id="clock-time"></div>
+        <div id="clock-date"></div>
+    </div>
 
     <!-- Barra di caricamento -->
     <div id="progress-bar-container">
@@ -89,6 +120,23 @@
     </div>
 
     <script>
+        // Gestione Orologio in tempo reale
+        function updateClock() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const dateOptions = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+            
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('it-IT', timeOptions);
+            
+            // Capitalizza la prima lettera del giorno
+            let dateString = now.toLocaleDateString('it-IT', dateOptions);
+            dateString = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+            document.getElementById('clock-date').textContent = dateString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // Inizializza subito senza aspettare 1 secondo
+
+        // Gestione Sequenza
         const videoStep = document.getElementById('step-video');
         const meteoStep = document.getElementById('step-meteo');
         const newsStep = document.getElementById('step-news');
@@ -96,7 +144,7 @@
         const progressBarContainer = document.getElementById('progress-bar-container');
         const progressBar = document.getElementById('progress-bar');
 
-        const meteoDuration = 120000; // 2 minuti in millisecondi
+        const meteoDuration = 60000; // 60 secondi in millisecondi
         const newsDuration = 255000;  // 4 minuti e 15 secondi in millisecondi
         let videoFallbackTimer = null;
 
